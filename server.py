@@ -14,7 +14,7 @@ def chat():
     # Если ответ содержит признаки кода, оборачиваем его в embed (code block)
     if "def " in response or "class " in response:
         # можно улучшить определение по необходимости
-        response = "```python\n" + response + "\n```"
+        response = "python\n" + response + "\n"
     return jsonify({"response": response})
 
 @app.route("/chat/image", methods=["POST"])
