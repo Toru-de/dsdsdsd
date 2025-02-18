@@ -12,3 +12,12 @@ def chat():
         messages=[{"role": "user", "content": user_input}]
     )
     return jsonify({"response": response})
+
+@app.route("/chat/image", methods=["POST"])
+def chat_image():
+    data = request.get_json()
+    # Ожидается получение Base64-кодированного изображения в поле 'image'
+    encoded_image = data.get("image", "")
+    # Здесь можно добавить логику для обработки изображения (например, сохранить или провести анализ)
+    # В данном примере просто возвращаем подтверждение получения изображения.
+    return jsonify({"response": "Изображение получено и обработано."})
