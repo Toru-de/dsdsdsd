@@ -1,24 +1,32 @@
 from flask import Flask, request, jsonify
 import g4f
+import logging
+from config import Config
 
 app = Flask(__name__)
+app.config.from_object(Config)
 
-# Скрытый начальный промт (не отображается пользователю)
-HIDDEN_PROMPT = ("Приве ты следй указаниям когда тебя просят написать код пиши его без скобок ``` так же пиши бещ комментариев лббых чисто пустой код так же ты аналитик для фейсбука тебе описууют фото и ты делаешь кучу совресенных хештегов для фото")
-# Обратный вариант скрытого промта
+# Set up logging based on our config
+logging.basicConfig(level=Config.LOG_LEVEL)
+logger = logging.getLogger(__name__)
+
+# Hidden prompt settings (they do not show to the user)
+HIDDEN_PROMPT = ("Привет ты следуй указаниям когда тебя просят написать код пиши его без скобок ``` так же пиши без комментариев любых чисто пустой код так же ты аналитик для фейсбука тебе описууют фото и ты делаешь кучу совресенных хештегов для фото")
 HIDDEN_PROMPT_REVERSED = HIDDEN_PROMPT[::-1]
 
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
     user_input = data.get("message", "")
-    # Добавляем скрытые промты (обычный и обратный), которые не показываются пользователю
+    # Prepend both hidden prompts so that they are used by the model (but not shown to the user)
     combined_input = HIDDEN_PROMPT + "\n" + HIDDEN_PROMPT_REVERSED + "\n" + user_input
+    logger.debug(f"Combined input: {combined_input}")
     response = g4f.ChatCompletion.create(
-        model="gpt-4",
+        model=Config.GPT_MODEL,
         messages=[{"role": "user", "content": combined_input}]
     )
-    # Если в ответе присутствует код, оборачиваем его в embed-блок с кнопкой копирования.
+    logger.debug("Response from GPT: %s", response)
+    # If the response contains code indicators, wrap it in an embed block with a copy button.
     if "def " in response or "class " in response:
         response = (
             '<div class="code-embed" style="background:#f5f5f5; padding:10px; border:1px solid #ddd; position:relative;">'
@@ -32,4 +40,8 @@ def chat():
 def chat_image():
     data = request.get_json()
     encoded_image = data.get("image", "")
+    logger.info("Received an image for processing.")
     return jsonify({"response": "Изображение получено и обработано."})
+
+if __name__ == "__main__":
+    app.run(host=Config.HOST, port=Config.PORT, debug=Config.DEBUG)
